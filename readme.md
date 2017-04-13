@@ -1,34 +1,39 @@
-_Experimental release. Minor version updates can introduce breaking changes before the first major update to 1.0, with the breaking changes always announced at least two weeks in advance. **The upcoming minor update to v0.2.0 is planned to include the following breaking changes**:_
-
- - *`elementType` setting (deprecated) from JsonMember removed in favor of the `elements` setting*
- - *`order` setting from JsonMember removed, properties from then on are traversed in declaration order*
- - *`TypedJSON.parse` will no longer work without specifying a type argument (use JSON.parse instead for untyped deserializing)*
- - *`typeHintPropertyKey` setting removed from the `settings` argument of TypedJSON.config, TypedJSON.parse, and TypedJSON.stringify in favor of a new `typeResolver` setting, accepting a callback function for custom type-resolving*
-   - *This makes it straightforward to consume JSON from other serializers, such as JSON.net*
- - *Polyfill for the `JSON` object removed from distributions. If your app relies on this, you'll need a third party polyfill.*
-
-*If you have concerns about these changes, please don't hesitate to [create an issue](https://github.com/JohnWhiteTB/TypedJSON/issues/new).*
+> **Author's note, please read if incorporating TypedJSON into a serious application:**
+>
+> TypedJSON is currently an experimental release and is not guaranteed to satisfy all use-cases reliably.
+> 
+> The upcoming update is a major update to v1.0.0, and an almost complete rehaul of the TypedJSON API with significant improvements over the initial release, based on significant amounts of feedback and practical use. This version is coming with a massive test-suite to start going towards more serious application possibilities, as many aspects of TypedJSON were found suitable for enterprise-grade use.
+>
+> Since numerous unnecessary features and decisions will be abandoned, **this update will introduce breaking changes**, of which the most notable will be:
+> - Properties of type `Array`, `Map`, `Set` will use JsonArrayMember, JsonMapMember, and JsonSetMember (respectively, and yes, support for these new ES6 collection types is finally coming)
+> - JsonMember will no longer support `Array`
+> - Configurable type-hint key replaced with configurable type-resolver and type-emitter callbacks (although with an identical default behavior)
+> 
+> **Why the breaking changes?**
+> 
+> 1. Because I feel the syntax of TypedJSON is so lightweight that, at this stage, it would be absolutely trivial to incorporate these changes into virtually any project
+> 2. Because it is better to do a hard-switch to a (subjectively) better API as early on as possible, without the burden of legacy code
+> 
+> This update is live as soon as all integration testing is done, anticipated in March, 2017. The main principle of TypedJSON is not subject to change, the API is permanently locked to a decorator-based approach.
+>
+> Notable non-breaking changes in this update will be:
+> - Support for ES6 `Set` and ES6 `Map` (although not for `WeakMap` and `WeakSet`)
+> - Support for all typed arrays (such as `Float32Array` and `Uint8Array`)
+> - Meaningful error messages and configurable error handler callback
+> - Known-types can be acquired through static methods of decorated classes (as `Function[]`)
 
 # TypedJSON
 
-Typed JSON parsing and serializing for TypeScript that preserves type information, using [decorators](https://github.com/Microsoft/TypeScript-Handbook/blob/master/pages/Decorators.md). Parse JSON into actual class instances. Recommended (but not required) to be used with [ReflectDecorators](https://github.com/rbuckton/ReflectDecorators), a prototype for an ES7 Reflection API for Decorator Metadata.
+Strong-typed JSON parsing and serializing for TypeScript with [decorators](https://github.com/Microsoft/TypeScript-Handbook/blob/master/pages/Decorators.md). Parse JSON into actual class instances. Recommended (but not required) to be used with [ReflectDecorators](https://github.com/rbuckton/ReflectDecorators), a prototype for an ES7 Reflection API for Decorator Metadata.
 
- - Parse regular JSON into actual class instances safely
- - Handles complex nested objects and polymorphism
+ - Parse regular JSON to typed class instances, safely
  - Seamlessly integrate into existing code with [decorators](https://github.com/Microsoft/TypeScript-Handbook/blob/master/pages/Decorators.md), ultra-lightweight syntax
- - Customize serialization and deserialization process, like custom names and default values
 
 ## Install & Use
 
 ```none
-npm install typedjson
-typings install npm:typedjson
-```
-
-Alternatively, the [latest release](https://github.com/JohnWhiteTB/TypedJSON/releases) is also available as a [NuGet package](https://www.nuget.org/packages/TypedJSON/):
-
-```none
-Install-Package TypedJSON
+npm install typedjson-npm
+typings install npm:typedjson-npm
 ```
 
  1. Snap the [@JsonObject decorator](https://github.com/JohnWhiteTB/TypedJSON/wiki/API-reference#jsonobject) on a class
@@ -69,16 +74,6 @@ firstName: string;
 ## Documentation
 
  - [API reference](https://github.com/JohnWhiteTB/TypedJSON/wiki/API-reference)
-
-## How It Works
-
-Using the JsonMember and JsonObject decorators will record metadata about classes and properties behind-the-scene. This metadata -- including property names and property types, as well as additional settings -- is available at runtime. When parsing JSON or stringifying an object, first the native JSON object is used for conversion between JSON string and simple Javascript `Object`. After this preliminary conversion is done, the recorded metadata is traversed recursively.
-
-JSON parsing is followed by _deserialization_, which converts the simple Javascript `Object` from JSON.parse into the specified class instance by doing a recursive _assignment_ to each marked property, as well as doing name conversion (if specified) and type-checking in the process. It also ensures that properties marked as required are present in the JSON, as an `Error` is thrown otherwise. Deserialization is _safe_, as the entire process is done by traversing the _expected_ metadata definitions, as opposed to traversing the _actual_ data present in JSON. This means that incorrect JSON will cause errors during deserialization, instead of deserializing into an unexpected object-tree.
-
- > **Warning:** properties with type `Object` or `any` are an exception to this rule. These types will be deserialized according to the actual data present in the JSON, as these properties have no usable metadata. Also be aware that a property with an interface type is considered as having `Object` as its determined type (consider setting the `refersAbstractType` option to `true` for these properties).
-
-JSON stringifying is followed by the _serialization_ process, which is responsible for name conversion (if specified), as well as including any additional type-hints required when processing objects with polymorphic properties. When polymorphism is involved, type-hints are required to ensure serialized objects are deserialized into the correct subtype. The default property key used for type-hints embedded into the JSON string is `__type`, which is configurable. The serialization process is much more relaxed than deserializing, as objects being serialized are expected to be of the correct type, and security implications are less significant.
 
 ## License
 
